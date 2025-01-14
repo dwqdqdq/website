@@ -1,17 +1,18 @@
 <?php
-    require_once __DIR__.'/_backend/preload.php';
+require_once __DIR__.'/_backend/preload.php';
 
-    $page['title'] = 'Get Involved with elementary OS';
-    $page['theme-color'] = '#3E4E54';
+$page['title'] = 'Get Involved with elementary OS';
+$page['theme-color'] = '#3E4E54';
 
-    $page['styles'] = array(
-        'https://fonts.googleapis.com/css?family=Marck+Script',
-        'styles/get-involved.css'
-    );
+$page['styles'] = array(
+    'https://fonts.googleapis.com/css?family=Marck+Script',
+    'styles/get-involved.css'
+);
 
-    include $template['header'];
-    include $template['alert'];
+include $template['header'];
+include $template['alert'];
 ?>
+
 <section class="hero">
     <div class="grid">
         <div class="two-thirds">
@@ -47,7 +48,7 @@
              <a class="button flat" href="https://igg.me/at/appcenter-for-everyone" target="_blank" rel="noopener">Back AppCenter for everyone</a>
          </div>
      </div>
- <?php } ?>
+<?php } ?>
 
     <div class="grid">
         <div class="half">
@@ -168,7 +169,7 @@
     <div class="grid">
         <div class="two-thirds">
             <h2>Design</h2>
-            <p class="text-center">Our design team turns ideas into clear issue reports and deliverable assets. Before diving in, it's recommended to read about our design workflow. <a class="read-more" href="/docs/code/reference#proposing-design-changes" target="_blank" rel="noopener">Learn More</a></p>
+            <p class="text-center">Our design team turns ideas into clear issue reports and deliverable assets. Before diving in, it's recommended to read about our design workflow. <a class="read-more" href="https://docs.elementary.io/hig/design-philosophy" target="_blank" rel="noopener">Learn More</a></p>
         </div>
     </div>
     <div class="design-links">

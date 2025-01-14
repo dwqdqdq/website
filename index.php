@@ -1,81 +1,69 @@
 <?php
-  require_once __DIR__.'/_backend/classify.current.php';
-  require_once __DIR__.'/_backend/preload.php';
-  require_once __DIR__.'/_backend/os-payment.php';
-  require_once __DIR__.'/_backend/email/os-payment.php';
+require_once __DIR__.'/_backend/geolocate.download.php'; // provides $download_link
+require_once __DIR__.'/_backend/preload.php';
+require_once __DIR__.'/_backend/os-payment.php';
 
-  $page['title'] = $sitewide['description'] . ' &sdot; elementary OS';
+$page['title'] = $sitewide['description'] . ' &sdot; elementary OS';
 
-  $page['scripts'] = array(
-    'scripts/download.js',
-    'scripts/blog.js',
-    'scripts/showcase.run.js'
-  );
+$page['scripts'] = array(
+  'scripts/download.js',
+  'scripts/blog.js',
+  'scripts/showcase.run.js'
+);
 
-  $page['styles'] = array(
-    'styles/home.css',
-    'styles/blog.css'
-  );
+$page['styles'] = array(
+  'styles/home.css',
+  'styles/blog.css'
+);
 
-  $already_paid = (os_payment_getcookie($config['release_version']) > 0);
-  $sendPaymentAnalytics = false;
+$already_paid = (os_payment_getcookie($config['release_version']) > 0);
+$sendPaymentAnalytics = false;
 
-  $stripe = new \Stripe\StripeClient([
-    "api_key" => $config['stripe_sk'],
-    "stripe_version" => "2022-11-15"
-  ]);
+$stripe = new \Stripe\StripeClient([
+  "api_key" => $config['stripe_sk'],
+  "stripe_version" => "2024-04-10"
+]);
 
-  if (isset($_GET['checkout_session_id'])) {
-      if ($already_paid) {
+if (isset($_GET['checkout_session_id'])) {
+    if ($already_paid) {
         header("Location: " . $sitewide['root']);
         die();
-      }
+    }
 
-      try {
-          $session = \Stripe\Checkout\Session::retrieve($_GET['checkout_session_id']);
-      } catch (\Stripe\Exception $e) {
-          header("Location: " . $sitewide['root']);
-          die();
-      }
+    try {
+        $session = $stripe->checkout->sessions->retrieve($_GET['checkout_session_id']);
+    } catch (Exception $e) {
+        header("Location: " . $sitewide['root']);
+        die();
+    }
 
-      if ($session->status === "expired") {
-          header("Location: " . $sitewide['root']);
-          die();
-      }
+    if ($session->status === "expired") {
+        header("Location: " . $sitewide['root']);
+        die();
+    }
 
-      $paymentAmount = $session->amount_total;
-      $paid = false;
+    $paymentAmount = $session->amount_total;
+    $paid = false;
 
-      if(!$already_paid) {
+    if (!$already_paid) {
         $sendPaymentAnalytics = true;
-      }
+    }
 
-      if ($session->payment_status === "paid") {
-          $paid = true;
-          $already_paid = true;
-          os_payment_setcookie($config['release_version'], $session->amount_total);
+    if ($session->payment_status === "paid") {
+        $paid = true;
+        $already_paid = true;
+        os_payment_setcookie($config['release_version'], $session->amount_total);
+    }
 
-          $intent = $stripe->paymentIntents->retrieve(
-            $session['payment_intent'],
-            ['expand' => ['latest_charge']]
-          );
-          try {
-            email_os_payment ($intent);
-          } catch (Exception $e) {
-            header("Location: " . $sitewide['root']);
-            die();
-          }
-      }
+    $page['scripts'][] = 'scripts/payment-complete.js';
+}
 
-      $page['scripts'][] = 'scripts/payment-complete.js';
-  }
-
-  include $template['header'];
-  include $template['alert'];
+include $template['header'];
+include $template['alert'];
 ?>
 
     <script>
-        <?php if($sendPaymentAnalytics && $paid) {?>
+        <?php if ($sendPaymentAnalytics && $paid) {?>
             plausible('Payment', {
                 props: {
                     Input: <?php echo($paymentAmount)?>,
@@ -83,7 +71,7 @@
                     Action: 'Complete'
                 }
             });
-        <?php } else if ($sendPaymentAnalytics) { ?>
+        <?php } elseif ($sendPaymentAnalytics) { ?>
             plausible('Payment', {
                 props: {
                     Input: <?php echo($paymentAmount)?>,
@@ -104,15 +92,15 @@
 
       <div class="section__showcase">
         <img class="bg" src="images/home/notebook.jpg" alt="Generic laptop computer" />
-        <img src="images/screenshots/desktop.jpg" alt="elementary OS 7 Horus desktop" />
+        <img src="images/screenshots/desktop.jpg" alt="elementary OS 8 desktop" />
       </div>
 
       <div class="section__detail grid">
         <div class="whole">
           <div id="amounts">
             <?php
-              if (!$already_paid) {
-            ?>
+            if (!$already_paid) {
+                ?>
             <h4 id="pay-what-you-want">Pay What You Can:</h4>
             <div id="choice-buttons">
               <button id="amount-ten"  value="10" class="small-button payment-button target-amount">10</button>
@@ -124,8 +112,8 @@
                 <p class="small-label focus-reveal text-center">Enter any dollar amount.</p>
               </div>
             </div>
-            <?php
-              }
+                <?php
+            }
             ?>
             <div class="column">
               <form id="payment-form" action="<?php echo $sitewide['root']?>api/create-checkout-session" method="POST">
@@ -142,13 +130,13 @@
             <div style="clear:both;"></div>
 
             <?php
-              if ($already_paid) {
-            ?>
+            if ($already_paid) {
+                ?>
             <div id="choice-buttons">
               <input type="hidden" id="amount-twenty" value="0">
             </div>
-            <?php
-              }
+                <?php
+            }
             ?>
           </div>
         </div>
@@ -157,9 +145,9 @@
     <section id="whats-new" class="grey">
       <div class="grid">
         <div class="two-thirds">
-          <h2>What’s New in elementary OS 7</h2>
-          <p>Forward thinking and designed for real life with an improved sideloading and alt store experience, power profiles management, and using a next generation UI toolkit. OS 7 Helps you get the apps you need, Empowers you with new features and settings, and evolves our developer platform.</p>
-          <a href="https://blog.elementary.io/os-7-available-now/" target="_blank" rel="noopener" class="read-more">Read the Announcement</a>
+          <h2>What’s New in elementary OS 8</h2>
+          <p>Carefree because you're cared for. OS 8 brings a Secure Session that ensures apps respect your privacy and require your consent, a brand new Dock with productive multitasking and window management features, and empowers our diverse community through Inclusive Design.</p>
+          <a href="https://blog.elementary.io/os-8-available-now/" target="_blank" rel="noopener" class="read-more">Read the Announcement</a>
         </div>
       </div>
     </section>
@@ -457,23 +445,23 @@
     <section class="grid" id="the-press">
       <div class="third">
         <a href="https://www.wired.com/2013/11/elementaryos/" target="_blank" rel="noopener"><?php include __DIR__.'/images/thirdparty-logos/wired.svg'; ?></a>
-        <a class="inline-tweet" href="https://twitter.com/intent/tweet?original_referer=https://elementary.io&text=&ldquo;elementary OS is different… a beautiful and powerful operating system.&rdquo; –@WIRED https://elementary.io" target="_blank" rel="noopener">&ldquo;elementary OS is different… a beautiful and powerful operating system.&rdquo;</a>
+        &ldquo;elementary OS is different… a beautiful and powerful operating system.&rdquo;
       </div>
       <div class="third">
         <a href="https://arstechnica.com/gadgets/2018/12/a-tour-of-elementary-os-perhaps-the-linux-worlds-best-hope-for-the-mainstream/" target="_blank" rel="noopener"><?php include __DIR__.'/images/thirdparty-logos/ars.svg'; ?></a>
-        <a class="inline-tweet" href="https://twitter.com/intent/tweet?original_referer=https://elementary.io&text=&ldquo;Gets out of the way and lets you focus on what you need to get done.&rdquo; –@arstechnica https://elementary.io" target="_blank" rel="noopener">&ldquo;Gets out of the way and lets you focus on what you need to get done.&rdquo;</a>
+        &ldquo;Gets out of the way and lets you focus on what you need to get done.&rdquo;
       </div>
       <div class="third">
         <a href="https://www.forbes.com/sites/jasonevangelho/2019/01/29/linux-distro-spotlight-what-i-love-about-elementary-os/" target="_blank" rel="noopener"><?php include __DIR__.'/images/thirdparty-logos/forbes.svg'; ?></a>
-        <a class="inline-tweet" href="https://twitter.com/intent/tweet?original_referer=https://elementary.io&text=&ldquo;I've found myself more productive these past two weeks [using elementary OS] than in the last two months combined.&rdquo; –@forbes https://elementary.io"  target="_blank" rel="noopener">&ldquo;I've found myself more productive these past two weeks [using elementary OS] than in the last two months combined.&rdquo;</a>
+        &ldquo;I've found myself more productive these past two weeks [using elementary OS] than in the last two months combined.&rdquo;
       </div>
       <div class="third">
         <a href="https://web.archive.org/web/20150312112222/http://www.maclife.com/article/columns/future_os_x_may_be_more_elementary_ios_7" target="_blank" rel="noopener"><?php include __DIR__.'/images/thirdparty-logos/maclife.svg'; ?></a>
-        <a class="inline-tweet" href="http://twitter.com/home/?status=&ldquo;A fast, low-maintenance platform that can be installed virtually anywhere.&rdquo; –@MacLife https://elementary.io" target="_blank" rel="noopener">&ldquo;A fast, low-maintenance platform that can be installed virtually anywhere.&rdquo;</a>
+        &ldquo;A fast, low-maintenance platform that can be installed virtually anywhere.&rdquo;
       </div>
       <div class="third">
         <a href="https://lifehacker.com/how-to-move-on-after-windows-xp-without-giving-up-your-1556573928" target="_blank" rel="noopener"><?php include __DIR__.'/images/thirdparty-logos/lifehacker.svg'; ?></a>
-        <a class="inline-tweet" href="https://twitter.com/intent/tweet?original_referer=https://elementary.io&text=&ldquo;Lightweight and fast… and has a real flair for design and appearances.&rdquo; –@lifehacker https://elementary.io" target="_blank" rel="noopener">&ldquo;Lightweight and fast… and has a real flair for design and appearances.&rdquo;</a>
+        &ldquo;Lightweight and fast… and has a real flair for design and appearances.&rdquo;
       </div>
     </section>
 
